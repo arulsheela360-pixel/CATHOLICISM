@@ -10,7 +10,8 @@
         .container { max-width: 500px; margin: 20px auto; background-color: #fff; color: #333; padding: 30px; border-radius: 5px; text-align: center; }
         input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         button { width: 100%; padding: 12px; background-color: #630e10; color: #d4af37; border: none; cursor: pointer; font-weight: bold; font-size: 16px; }
-        #statusArea { color: #630e10; font-weight: bold; padding: 20px; }
+        #statusArea { color: #630e10; font-weight: bold; padding: 20px; display: none; }
+        .home-btn { display: inline-block; margin-top: 20px; padding: 10px 20px; background-color: #a31a1a; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -26,26 +27,47 @@
         <input type="text" name="name" placeholder="Full Name" required>
         <input type="email" name="email" id="email" placeholder="Email Address" required>
         <select name="interest">
-            <option value="Saints">Saints</option>
+            <option value="All">All</option>
             <option value="Bible">Bible</option>
             <option value="Eucharistic Miracles">Eucharistic Miracles</option>
-            <option value="All">All</option>
+            <option value="Saints">Saints</option>
         </select>
         <button type="submit">Submit Application</button>
     </form>
 </div>
-<div id="statusArea" class="container" style="display:none;"></div>
+
+<div id="statusArea" class="container"></div>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxhkD-nxO2tY3WJMVAi7DFDEqUIsW5AId1y2eh_Y6xjS9hZ3EsirRHxRTKKyQfhA-WUqg/exec";
-    if(localStorage.getItem('memberApplied')) { showStatus("You have already submitted your application."); }
-    document.getElementById('memberForm').addEventListener('submit', (e) => {
+
+    document.getElementById('memberForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        fetch(SCRIPT_URL, {method: 'POST', body: new FormData(e.target)});
-        localStorage.setItem('memberApplied', 'true');
-        showStatus("Thank you! Your application has been submitted.");
+        const emailInput = document.getElementById('email').value;
+        
+        // 1. ஷீட்டில் உள்ள அனைத்து தரவுகளையும் எடுக்கிறோம்
+        const response = await fetch(SCRIPT_URL);
+        const data = await response.json();
+        
+        // 2. மின்னஞ்சல் ஏற்கனவே உள்ளதா என சரிபார்க்கிறோம்
+        const existingUser = data.find(row => row[1] === emailInput);
+        
+        if (existingUser) {
+            // ஏற்கனவே இருந்தால், அதன் ஸ்டேட்டஸைக் காட்டுகிறோம் (Accepted/Rejected/Pending)
+            showStatus("You have already applied. Your current status is: " + existingUser[3]);
+        } else {
+            // புதிய பயனர் என்றால் சமர்ப்பிக்கிறோம்
+            fetch(SCRIPT_URL, {method: 'POST', body: new FormData(e.target)});
+            showStatus("Thank you! Your application has been submitted successfully. Please check back later for status updates.");
+        }
     });
-    function showStatus(msg) { document.getElementById('mainContainer').style.display = 'none'; document.getElementById('statusArea').innerText = msg; document.getElementById('statusArea').style.display = 'block'; }
+
+    function showStatus(msg) { 
+        document.getElementById('mainContainer').style.display = 'none'; 
+        const s = document.getElementById('statusArea');
+        s.innerHTML = msg + '<br><a href="index.html" class="home-btn">Back to Home</a>'; 
+        s.style.display = 'block'; 
+    }
 </script>
 </body>
 </html>
