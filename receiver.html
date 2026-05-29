@@ -20,7 +20,6 @@
 <body>
 
 <div class="header">
-    <img src="velasquez-coronacion-Copy.jpg" alt="Logo" style="width: 100%; max-width: 250px; height: auto;">
     <h1 style="color: #d4af37; margin: 10px 0;">ADMIN DASHBOARD</h1>
 </div>
 
@@ -35,18 +34,35 @@
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxfesCxoSFtitYJ-gCEF0ANu3prWcJT3uPaOxJhImNEom35-5hf3lIU9wg0AgLEIsXyWg/exec";
-    fetch(SCRIPT_URL).then(res=>res.json()).then(data => {
-        const tbody = document.getElementById('tableBody'); tbody.innerHTML = "";
-        data.forEach((row, i) => {
-            if(i==0) return;
-            tbody.innerHTML += `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td>
-            <td id="c${i}">${row[3]=='Pending'?`<button class="btn btn-accept" onclick="up('${row[1]}','Accepted',${i})">Accept</button> <button class="btn btn-reject" onclick="up('${row[1]}','Rejected',${i})">Reject</button>`:row[3]}</td></tr>`;
+    
+    // நோட்டிபிகேஷன் அனுமதி கேட்பது
+    window.onload = () => {
+        if (Notification.permission !== 'granted') Notification.requestPermission();
+        loadData();
+    };
+
+    function loadData() {
+        fetch(SCRIPT_URL).then(res=>res.json()).then(data => {
+            const tbody = document.getElementById('tableBody'); 
+            tbody.innerHTML = "";
+            data.forEach((row, i) => {
+                if(i==0) return;
+                tbody.innerHTML += `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td>
+                <td id="c${i}">${row[3]=='Pending'?`<button class="btn btn-accept" onclick="up('${row[1]}','Accepted',${i})">Accept</button> <button class="btn btn-reject" onclick="up('${row[1]}','Rejected',${i})">Reject</button>`:row[3]}</td></tr>`;
+            });
         });
-    });
+    }
+
     function up(email, status, i) {
         fetch(SCRIPT_URL, {method:'POST', body:new URLSearchParams({action:'update', email:email, status:status})});
         document.getElementById('c'+i).innerText = status;
+        if (Notification.permission === 'granted') {
+            new Notification("Update Status", { body: "Request for " + email + " has been " + status });
+        }
     }
+
+    // புதிய விண்ணப்பங்களை 30 வினாடிக்கு ஒருமுறை செக் செய்யும்
+    setInterval(loadData, 30000); 
 </script>
 </body>
 </html>
